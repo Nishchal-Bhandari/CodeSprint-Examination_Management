@@ -1,28 +1,27 @@
 package com.ems.util;
 
 import javax.swing.BorderFactory;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.DocumentFilter;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.border.EmptyBorder;
-import javax.swing.table.JTableHeader;
-import javax.swing.text.AbstractDocument;
-import javax.swing.text.DocumentFilter;
 import javax.swing.text.JTextComponent;
-import java.awt.BasicStroke;
-import java.awt.BorderLayout;
-import java.awt.Color;
+import javax.swing.table.JTableHeader;
 import java.awt.Component;
 import java.awt.Cursor;
-import java.awt.Dimension;
-import java.awt.FlowLayout;
+import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.awt.BorderLayout;
 import java.awt.RenderingHints;
 
 public final class UiUtil {
@@ -50,8 +49,7 @@ public final class UiUtil {
         button.setForeground(AppTheme.TEXT);
         button.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(AppTheme.BORDER),
-                BorderFactory.createEmptyBorder(8, 12, 8, 12)
-        ));
+                BorderFactory.createEmptyBorder(8, 12, 8, 12)));
         button.setFont(AppTheme.FONT_BODY);
         button.setOpaque(true);
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
@@ -115,8 +113,7 @@ public final class UiUtil {
         field.setCaretColor(AppTheme.TEXT);
         field.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(AppTheme.BORDER),
-                BorderFactory.createEmptyBorder(6, 8, 6, 8)
-        ));
+                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
         field.setPreferredSize(new Dimension(width, 38));
     }
 
@@ -124,14 +121,16 @@ public final class UiUtil {
         if (field.getDocument() instanceof AbstractDocument document) {
             document.setDocumentFilter(new DocumentFilter() {
                 @Override
-                public void insertString(FilterBypass fb, int offset, String string, javax.swing.text.AttributeSet attr) throws javax.swing.text.BadLocationException {
+                public void insertString(FilterBypass fb, int offset, String string, javax.swing.text.AttributeSet attr)
+                        throws javax.swing.text.BadLocationException {
                     if (string == null || string.chars().allMatch(Character::isDigit)) {
                         super.insertString(fb, offset, string, attr);
                     }
                 }
 
                 @Override
-                public void replace(FilterBypass fb, int offset, int length, String text, javax.swing.text.AttributeSet attrs) throws javax.swing.text.BadLocationException {
+                public void replace(FilterBypass fb, int offset, int length, String text,
+                        javax.swing.text.AttributeSet attrs) throws javax.swing.text.BadLocationException {
                     if (text == null || text.chars().allMatch(Character::isDigit)) {
                         super.replace(fb, offset, length, text, attrs);
                     }
@@ -159,39 +158,19 @@ public final class UiUtil {
     }
 
     public static void info(Component parent, String message) {
-        showCustomDialog(parent, message, "Information", JOptionPane.INFORMATION_MESSAGE);
+        JOptionPane.showMessageDialog(parent, message, "Information", JOptionPane.INFORMATION_MESSAGE);
         com.ems.util.LoggerUtil.info(message);
     }
 
     public static void error(Component parent, String message) {
-        showCustomDialog(parent, message, "Error Details", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(parent, message, "Error", JOptionPane.ERROR_MESSAGE);
         com.ems.util.LoggerUtil.error(message, null);
     }
 
     public static void error(Component parent, Exception ex) {
         String msg = ex == null ? "Unknown error" : ex.getMessage();
-        showCustomDialog(parent, msg, "Error Details", JOptionPane.ERROR_MESSAGE);
+        JOptionPane.showMessageDialog(parent, msg, "Error", JOptionPane.ERROR_MESSAGE);
         com.ems.util.LoggerUtil.error(msg, ex);
-    }
-
-    private static void showCustomDialog(Component parent, String message, String title, int messageType) {
-        String safeMsg = (message == null || message.isBlank()) ? "An unexpected event occurred." : message;
-
-        JTextArea textArea = new JTextArea(safeMsg);
-        textArea.setColumns(45);
-        textArea.setLineWrap(true);
-        textArea.setWrapStyleWord(true);
-        textArea.setEditable(false);
-        textArea.setFont(AppTheme.FONT_BODY);
-        textArea.setBackground(new Color(245, 247, 250));
-        textArea.setForeground(new Color(20, 30, 45));
-        textArea.setBorder(new EmptyBorder(8, 8, 8, 8));
-
-        JScrollPane scrollPane = new JScrollPane(textArea);
-        scrollPane.setPreferredSize(new Dimension(540, 130));
-        scrollPane.setBorder(BorderFactory.createLineBorder(new Color(210, 215, 225)));
-
-        JOptionPane.showMessageDialog(parent, scrollPane, title, messageType);
     }
 
     private static final class GradientBackgroundPanel extends JPanel {
