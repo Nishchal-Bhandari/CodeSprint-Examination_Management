@@ -1,6 +1,7 @@
 package com.ems.ui;
 
 import com.ems.service.AuthService;
+import com.ems.util.AnimationEngine;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -46,6 +47,7 @@ public class LoginFrame extends JFrame {
     private JLabel feedbackLbl;
     private JButton loginBtn;
     private JPanel tabAdmin, tabStudent;
+    private JPanel rightCard;  // Reference for shake animation
     private JPanel hintPanel;
 
     // Credential data per role
@@ -177,6 +179,7 @@ public class LoginFrame extends JFrame {
                 new EmptyBorder(36, 40, 32, 40)
         ));
         card.setPreferredSize(new Dimension(420, 540));
+        rightCard = card;  // store reference for shake animation
 
         // ── Header
         JLabel hd = new JLabel("Sign In");
@@ -308,10 +311,8 @@ public class LoginFrame extends JFrame {
         // Swap hint panel content
         hintPanel.removeAll();
         JPanel inner = buildHintPanel(idx);
-        hintPanel.setLayout(inner.getLayout());
-        for (Component c : inner.getComponents()) hintPanel.add(c);
-        hintPanel.setBorder(inner.getBorder());
-        hintPanel.setBackground(inner.getBackground());
+        hintPanel.setLayout(new BorderLayout());
+        hintPanel.add(inner, BorderLayout.CENTER);
         hintPanel.revalidate();
         hintPanel.repaint();
     }
@@ -522,6 +523,8 @@ public class LoginFrame extends JFrame {
                     String[] result = get();
                     String role = result[0], studentUsn = result[1];
                     SwingUtilities.invokeLater(() -> {
+                        feedbackLbl.setText("✓ Login successful — loading…");
+                        feedbackLbl.setForeground(C_SUCCESS);
                         if ("STUDENT".equals(role)) {
                             String usn = (studentUsn != null && !studentUsn.isBlank()) ? studentUsn : user;
                             new StudentPortalFrame(usn).setVisible(true);
@@ -539,6 +542,10 @@ public class LoginFrame extends JFrame {
                         loginBtn.setText("Sign In");
                         passwordField.selectAll();
                         passwordField.requestFocusInWindow();
+                        // Shake animation on error
+                        if (rightCard != null) {
+                            AnimationEngine.shake(rightCard, 12, 500);
+                        }
                     });
                 }
             }

@@ -1,6 +1,7 @@
 package com.ems.ui.panels;
 
 import com.ems.service.FacultyDutyService;
+import com.ems.util.AnimationEngine;
 import com.ems.util.AppTheme;
 import com.ems.util.UiUtil;
 
@@ -181,9 +182,15 @@ public class FacultyDutyPanel extends JPanel {
             @Override protected void paintComponent(Graphics g) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2.setColor(AppTheme.PANEL_BG);
+                GradientPaint gp = new GradientPaint(0, 0, AppTheme.PANEL_BG,
+                        getWidth(), getHeight(), new Color(AppTheme.PANEL_BG.getRed() + 8,
+                        AppTheme.PANEL_BG.getGreen() + 10, AppTheme.PANEL_BG.getBlue() + 15));
+                g2.setPaint(gp);
                 g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 12, 12));
+                g2.setColor(accent);
+                g2.fill(new RoundRectangle2D.Float(0, 0, getWidth(), 3, 3, 3));
                 g2.setColor(AppTheme.BORDER);
+                g2.setStroke(new BasicStroke(0.8f));
                 g2.draw(new RoundRectangle2D.Float(0, 0, getWidth() - 1, getHeight() - 1, 12, 12));
                 g2.dispose();
                 super.paintComponent(g);
@@ -191,17 +198,17 @@ public class FacultyDutyPanel extends JPanel {
         };
         card.setOpaque(false);
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
-        card.setBorder(new EmptyBorder(12, 16, 12, 16));
+        card.setBorder(new EmptyBorder(16, 16, 12, 16));
 
         JLabel tLbl = new JLabel(title);
         tLbl.setFont(AppTheme.FONT_CAPTION);
         tLbl.setForeground(AppTheme.TEXT_LIGHT);
 
-        valueLbl.setFont(AppTheme.FONT_TITLE);
+        valueLbl.setFont(AppTheme.FONT_KPI);
         valueLbl.setForeground(accent);
 
         card.add(tLbl);
-        card.add(Box.createVerticalStrut(4));
+        card.add(Box.createVerticalStrut(6));
         card.add(valueLbl);
 
         return card;
@@ -212,9 +219,9 @@ public class FacultyDutyPanel extends JPanel {
             List<String[]> rows = service.all();
             model.setRowCount(0);
             for (String[] row : rows) model.addRow(row);
-            kpiDutiesLbl.setText(String.valueOf(rows.size()));
+            AnimationEngine.animateCounter(kpiDutiesLbl, 0, rows.size(), AppTheme.ANIM_SLOW);
             long uniqueFaculty = rows.stream().map(r -> r[4]).distinct().count();
-            kpiFacultyLbl.setText(String.valueOf(uniqueFaculty));
+            AnimationEngine.animateCounter(kpiFacultyLbl, 0, (int) uniqueFaculty, AppTheme.ANIM_SLOW);
         } catch (Exception ex) {
             UiUtil.error(this, ex);
         }

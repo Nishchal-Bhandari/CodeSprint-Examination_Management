@@ -5,6 +5,7 @@ import com.ems.model.Notification;
 import com.ems.model.Student;
 import com.ems.service.AuthService;
 import com.ems.service.StudentPortalService;
+import com.ems.util.AnimationEngine;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
