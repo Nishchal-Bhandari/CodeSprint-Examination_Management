@@ -1,0 +1,19 @@
+# Compiled class files & build directories
+out/
+bin/
+dist/build/
+*.class
+
+# Log files
+logs/*.log*
+*.log
+
+# IDE & System files
+.idea/
+*.iml
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Temporary build logs
+*_actual.txt

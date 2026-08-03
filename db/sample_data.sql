@@ -1,0 +1,2 @@
+-- Sample data is embedded in full_workbench_script.sql for one-click setup.
+-- If required, extract INSERT blocks from that file into this file.
