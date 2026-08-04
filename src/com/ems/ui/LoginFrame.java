@@ -330,7 +330,7 @@ public class LoginFrame extends JFrame {
         usernameField.setText("");
         passwordField.setText("");
         String placeholder = switch (idx) {
-            case 0 -> "admin  or  examcell";
+            case 0 -> "admin";
             case 1 -> "Your USN  e.g. 1CS23CS001";
             default -> "";
         };
@@ -362,11 +362,7 @@ public class LoginFrame extends JFrame {
         panel.add(Box.createVerticalStrut(10));
 
         if (tabIdx == 0) {
-            panel.add(credRow("Admin",     "admin",    "admin123",  "Full system access", panel));
-            panel.add(Box.createVerticalStrut(6));
-            panel.add(credRow("Exam Cell", "examcell", "exam123",   "Scheduling & reports", panel));
-            panel.add(Box.createVerticalStrut(6));
-            panel.add(credRow("Viewer",    "viewer",   "view123",   "Read-only access", panel));
+            panel.add(credRow("Admin", "admin", "admin123", "Full system access", panel));
         } else {
             JPanel helpBox = new JPanel();
             helpBox.setLayout(new BoxLayout(helpBox, BoxLayout.Y_AXIS));
