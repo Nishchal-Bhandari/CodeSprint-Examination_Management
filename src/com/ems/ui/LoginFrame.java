@@ -61,8 +61,8 @@ public class LoginFrame extends JFrame {
     public LoginFrame() {
         setTitle("EMS — Login");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1020, 640);
-        setMinimumSize(new Dimension(880, 560));
+        setSize(1060, 680);
+        setMinimumSize(new Dimension(900, 600));
         setLocationRelativeTo(null);
         setContentPane(buildRoot());
         SwingUtilities.invokeLater(() -> usernameField.requestFocusInWindow());
@@ -117,7 +117,7 @@ public class LoginFrame extends JFrame {
         features.setLayout(new BoxLayout(features, BoxLayout.Y_AXIS));
         features.setAlignmentX(LEFT_ALIGNMENT);
         features.setBorder(new EmptyBorder(28, 0, 28, 0));
-        features.add(featureRow("👨‍💼", "Admin",   "Full system, audit, and security access"));
+        features.add(featureRow("👤", "Admin",   "Full system, audit, and security access"));
         features.add(Box.createVerticalStrut(16));
         features.add(featureRow("🎓", "Student", "Hall ticket download and notifications"));
 
@@ -150,7 +150,7 @@ public class LoginFrame extends JFrame {
         row.setOpaque(false); row.setAlignmentX(LEFT_ALIGNMENT);
 
         JLabel em = new JLabel(emoji);
-        em.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 22));
+        em.setFont(new Font("Segoe UI", Font.PLAIN, 22));
         em.setPreferredSize(new Dimension(34, 34));
         em.setHorizontalAlignment(SwingConstants.CENTER);
 
@@ -176,9 +176,9 @@ public class LoginFrame extends JFrame {
         card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(220, 228, 242), 1, true),
-                new EmptyBorder(36, 40, 32, 40)
+                new EmptyBorder(24, 32, 24, 32)
         ));
-        card.setPreferredSize(new Dimension(420, 540));
+        card.setPreferredSize(new Dimension(440, 590));
         rightCard = card;  // store reference for shake animation
 
         // ── Header
@@ -197,14 +197,14 @@ public class LoginFrame extends JFrame {
         JLabel userLbl = fieldLabel("Username");
         usernameField = new JTextField();
         applyFieldStyle(usernameField);
-        usernameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        usernameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         usernameField.setAlignmentX(LEFT_ALIGNMENT);
 
         // ── Password field
         JLabel passLbl = fieldLabel("Password");
         passwordField = new JPasswordField();
         applyFieldStyle(passwordField);
-        passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 46));
+        passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         passwordField.setAlignmentX(LEFT_ALIGNMENT);
 
         // ── Show password
@@ -228,25 +228,25 @@ public class LoginFrame extends JFrame {
 
         // Assemble card
         card.add(hd);
-        card.add(Box.createVerticalStrut(4));
+        card.add(Box.createVerticalStrut(2));
         card.add(hdSub);
-        card.add(Box.createVerticalStrut(20));
-        card.add(tabs);
-        card.add(Box.createVerticalStrut(20));
-        card.add(userLbl);
-        card.add(Box.createVerticalStrut(6));
-        card.add(usernameField);
         card.add(Box.createVerticalStrut(14));
+        card.add(tabs);
+        card.add(Box.createVerticalStrut(12));
+        card.add(userLbl);
+        card.add(Box.createVerticalStrut(4));
+        card.add(usernameField);
+        card.add(Box.createVerticalStrut(10));
         card.add(passLbl);
-        card.add(Box.createVerticalStrut(6));
+        card.add(Box.createVerticalStrut(4));
         card.add(passwordField);
-        card.add(Box.createVerticalStrut(6));
+        card.add(Box.createVerticalStrut(4));
         card.add(showPw);
-        card.add(Box.createVerticalStrut(20));
+        card.add(Box.createVerticalStrut(14));
         card.add(loginBtn);
-        card.add(Box.createVerticalStrut(8));
+        card.add(Box.createVerticalStrut(4));
         card.add(feedbackLbl);
-        card.add(Box.createVerticalStrut(16));
+        card.add(Box.createVerticalStrut(10));
         card.add(hintPanel);
 
         right.add(card);
@@ -261,8 +261,8 @@ public class LoginFrame extends JFrame {
         tabs.setMaximumSize(new Dimension(Integer.MAX_VALUE, 44));
         tabs.setAlignmentX(LEFT_ALIGNMENT);
 
-        tabAdmin   = buildTab("👨‍💼 Admin / Staff", 0);
-        tabStudent = buildTab("🎓 Student",         1);
+        tabAdmin   = buildTab("Admin / Staff", 0);
+        tabStudent = buildTab("Student", 1);
 
         tabs.add(tabAdmin);
         tabs.add(tabStudent);
@@ -287,7 +287,7 @@ public class LoginFrame extends JFrame {
         tab.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
 
         JLabel lbl = new JLabel(label, SwingConstants.CENTER);
-        lbl.setFont(F_BOLD_12);
+        lbl.setFont(F_BOLD_13);
         lbl.setForeground(activeTab == idx ? C_WHITE : C_TEXT_MID);
         tab.add(lbl);
 
@@ -351,15 +351,15 @@ public class LoginFrame extends JFrame {
         panel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 500));
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(new Color(210, 222, 245), 1, true),
-                new EmptyBorder(12, 14, 12, 14)
+                new EmptyBorder(8, 10, 8, 10)
         ));
 
-        JLabel hintTitle = new JLabel("🔑  Quick Login Credentials");
+        JLabel hintTitle = new JLabel("Quick Login Credentials");
         hintTitle.setFont(F_BOLD_13); hintTitle.setForeground(C_TEXT_HD);
         hintTitle.setAlignmentX(LEFT_ALIGNMENT);
 
         panel.add(hintTitle);
-        panel.add(Box.createVerticalStrut(10));
+        panel.add(Box.createVerticalStrut(6));
 
         if (tabIdx == 0) {
             panel.add(credRow("Admin", "admin", "admin123", "Full system access", panel));
@@ -367,21 +367,20 @@ public class LoginFrame extends JFrame {
             JPanel helpBox = new JPanel();
             helpBox.setLayout(new BoxLayout(helpBox, BoxLayout.Y_AXIS));
             helpBox.setOpaque(false);
-            helpBox.setBorder(new EmptyBorder(4, 4, 12, 4));
+            helpBox.setBorder(new EmptyBorder(2, 2, 4, 2));
             
-            JLabel s1 = new JLabel("ℹ\uFE0F First time login?");
+            JLabel s1 = new JLabel("First time login?");
             s1.setFont(F_BOLD_12); s1.setForeground(new Color(22, 100, 200)); s1.setAlignmentX(LEFT_ALIGNMENT);
             JLabel s2 = new JLabel("Your initial password is the same as your USN.");
             s2.setFont(F_REG_12); s2.setForeground(C_TEXT_MID); s2.setAlignmentX(LEFT_ALIGNMENT);
             
-            helpBox.add(s1); helpBox.add(Box.createVerticalStrut(4)); helpBox.add(s2);
+            helpBox.add(s1); helpBox.add(Box.createVerticalStrut(2)); helpBox.add(s2);
             panel.add(helpBox);
+            panel.add(Box.createVerticalStrut(4));
 
             panel.add(credRow("Student", "1CS23CS001", "1CS23CS001", "Computer Science", panel));
-            panel.add(Box.createVerticalStrut(6));
+            panel.add(Box.createVerticalStrut(4));
             panel.add(credRow("Student", "1EC23EC001", "1EC23EC001", "Electronics", panel));
-            panel.add(Box.createVerticalStrut(6));
-            panel.add(credRow("Student", "1ME23ME001", "1ME23ME001", "Mechanical", panel));
         }
 
         return panel;
