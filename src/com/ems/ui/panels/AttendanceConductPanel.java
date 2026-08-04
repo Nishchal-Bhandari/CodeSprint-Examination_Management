@@ -9,14 +9,13 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Attendance & Conduct panel – per-seat attendance, malpractice log, washroom log.
+ * Attendance & Conduct panel – per-seat attendance and malpractice log.
  */
 public class AttendanceConductPanel extends JPanel {
     private final AttendanceService service = new AttendanceService();
     private final com.ems.service.AllocationService allocationService = new com.ems.service.AllocationService();
     private final DefaultTableModel attModel;
     private final DefaultTableModel mpModel;
-    private final DefaultTableModel wrModel;
 
     public AttendanceConductPanel() {
         setLayout(new BorderLayout());
@@ -24,7 +23,7 @@ public class AttendanceConductPanel extends JPanel {
 
         add(UiUtil.buildSectionBanner(
                 "Attendance & Conduct",
-                "Mark per-seat attendance, log malpractice incidents, and track washroom exits"
+                "Mark per-seat attendance and log malpractice incidents"
         ), BorderLayout.NORTH);
 
         // ---- Top form card ----
@@ -104,31 +103,6 @@ public class AttendanceConductPanel extends JPanel {
         mpRow.add(mpBtn); mpRow.add(viewMpBtn);
         form.add(mpRow, gbc);
 
-        gbc.anchor = GridBagConstraints.WEST;
-        gbc.gridwidth = 1;
-
-        // Row 5: Washroom
-        gbc.gridy = 5;
-        JComboBox<String> wrUsnBox = new JComboBox<>();
-        wrUsnBox.setFont(com.ems.util.AppTheme.FONT_BODY);
-        wrUsnBox.setPreferredSize(new Dimension(140, 38));
-        
-        JTextField wrIdField  = new JTextField(8);  UiUtil.styleInput(wrIdField, 100); UiUtil.allowDigitsOnly(wrIdField);
-        gbc.gridx = 0; form.add(UiUtil.buildLabel("Washroom USN"), gbc);
-        gbc.gridx = 1; form.add(wrUsnBox, gbc);
-        gbc.gridx = 2; form.add(UiUtil.buildLabel("Return WL ID"), gbc);
-        gbc.gridx = 3; form.add(wrIdField, gbc);
-        
-        // Row 6: Washroom buttons
-        gbc.gridy = 6; gbc.gridx = 0; gbc.gridwidth = 6;
-        gbc.anchor = GridBagConstraints.EAST;
-        JButton wrExitBtn = UiUtil.buildSecondaryButton("Log Exit");
-        JButton wrReturnBtn = UiUtil.buildSecondaryButton("Mark Return");
-        JButton viewWrBtn = UiUtil.buildSecondaryButton("View Washroom Log");
-        JPanel wrRow = UiUtil.buildActionRow();
-        wrRow.add(wrExitBtn); wrRow.add(wrReturnBtn); wrRow.add(viewWrBtn);
-        form.add(wrRow, gbc);
-
         formCard.add(form, BorderLayout.CENTER);
 
         // ---- Tables ----
@@ -197,19 +171,11 @@ public class AttendanceConductPanel extends JPanel {
         JTable mpTable = new JTable(mpModel);
         UiUtil.styleTable(mpTable);
 
-        wrModel = new DefaultTableModel(new Object[]{"WL ID","USN","Name","Exit Time","Return Time"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
-        };
-        JTable wrTable = new JTable(wrModel);
-        UiUtil.styleTable(wrTable);
-
         JTabbedPane tabs = new JTabbedPane();
         JPanel attCard = UiUtil.buildSurfaceCard(); attCard.setLayout(new BorderLayout()); attCard.add(new JScrollPane(attTable), BorderLayout.CENTER);
         JPanel mpCard  = UiUtil.buildSurfaceCard(); mpCard.setLayout(new BorderLayout());  mpCard.add(new JScrollPane(mpTable), BorderLayout.CENTER);
-        JPanel wrCard  = UiUtil.buildSurfaceCard(); wrCard.setLayout(new BorderLayout());  wrCard.add(new JScrollPane(wrTable), BorderLayout.CENTER);
         tabs.addTab("Attendance", attCard);
         tabs.addTab("Malpractice", mpCard);
-        tabs.addTab("Washroom Log", wrCard);
 
         JPanel stack = new JPanel(new BorderLayout(0, 14));
         stack.setOpaque(false);
@@ -223,10 +189,8 @@ public class AttendanceConductPanel extends JPanel {
                 int examId = Integer.parseInt(examIdField.getText().trim());
                 List<String[]> allocations = allocationService.forExam(examId);
                 usnBox.removeAllItems();
-                wrUsnBox.removeAllItems();
                 for (String[] row : allocations) {
                     usnBox.addItem(row[1]);
-                    wrUsnBox.addItem(row[1]);
                 }
             } catch (Exception ignored) {}
         };
@@ -322,45 +286,6 @@ public class AttendanceConductPanel extends JPanel {
                 UiUtil.error(this, ex);
             }
         });
-
-        wrExitBtn.addActionListener(e -> {
-            try {
-                int examId = Integer.parseInt(examIdField.getText().trim());
-                String selectedWrUsn = (String) wrUsnBox.getSelectedItem();
-                if (selectedWrUsn == null) throw new IllegalArgumentException("No Washroom USN selected");
-                service.logWashroomExit(selectedWrUsn, examId);
-                UiUtil.info(this, "Washroom exit logged");
-                loadWr(examId);
-            } catch (NumberFormatException nfe) {
-                UiUtil.error(this, new IllegalArgumentException("Exam ID must be numeric"));
-            } catch (Exception ex) {
-                UiUtil.error(this, ex);
-            }
-        });
-
-        wrReturnBtn.addActionListener(e -> {
-            try {
-                long wlId = Long.parseLong(wrIdField.getText().trim());
-                service.returnFromWashroom(wlId);
-                UiUtil.info(this, "Return marked");
-                loadWr(Integer.parseInt(examIdField.getText().trim()));
-            } catch (NumberFormatException nfe) {
-                UiUtil.error(this, new IllegalArgumentException("WL ID and Exam ID must be numeric"));
-            } catch (Exception ex) {
-                UiUtil.error(this, ex);
-            }
-        });
-
-        viewWrBtn.addActionListener(e -> {
-            try {
-                loadWr(Integer.parseInt(examIdField.getText().trim()));
-                tabs.setSelectedIndex(2);
-            } catch (NumberFormatException nfe) {
-                UiUtil.error(this, new IllegalArgumentException("Exam ID must be numeric"));
-            } catch (Exception ex) {
-                UiUtil.error(this, ex);
-            }
-        });
     }
 
     private void loadAtt(int examId) throws Exception {
@@ -379,11 +304,5 @@ public class AttendanceConductPanel extends JPanel {
         List<String[]> rows = service.malpracticeForExam(examId);
         mpModel.setRowCount(0);
         for (String[] r : rows) mpModel.addRow(r);
-    }
-
-    private void loadWr(int examId) throws Exception {
-        List<String[]> rows = service.washroomLog(examId);
-        wrModel.setRowCount(0);
-        for (String[] r : rows) wrModel.addRow(r);
     }
 }

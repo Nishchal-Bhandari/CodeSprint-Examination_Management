@@ -95,7 +95,7 @@ public class AiCopilotPanel extends JPanel {
                 + "I can help you with:\n"
                 + "• Drafting official malpractice reports\n"
                 + "• Reviewing invigilator duty rules & department conflict constraints\n"
-                + "• Checking exam seating regulations & washroom policies\n\n"
+                + "• Checking exam seating regulations & hall ticket criteria\n\n"
                 + "Ask me any question below or click a quick action chip!");
     }
 
@@ -154,7 +154,6 @@ public class AiCopilotPanel extends JPanel {
 
         bar.add(createChip("📝 Malpractice Report Draft", "Draft a formal malpractice incident report for a student caught copying from a mobile phone."));
         bar.add(createChip("🛡️ Invigilator Duty Rules", "What are the department constraint rules for assigning faculty invigilators to exam rooms?"));
-        bar.add(createChip("🚽 Washroom Log Policy", "Summarize the student washroom exit and return logging procedure during exams."));
         bar.add(createChip("🎟️ Hall Ticket Criteria", "What criteria must a student meet to receive an official Hall Ticket?"));
 
         return bar;
