@@ -671,11 +671,11 @@ public class StudentPortalFrame extends JFrame {
         try {
             Student student = portalService.getStudent(usn);
             List<HallTicketEntry> entries = portalService.getHallTicket(usn);
-            if (student == null || entries.isEmpty()) {
+            if (student == null || entries == null || entries.isEmpty()) {
                 JOptionPane.showMessageDialog(this, "No exam schedule found.");
                 return;
             }
-            new HallTicketDialog(this, student, entries).setVisible(true);
+            HallTicketDialog.promptAndOpen(this, student, entries);
         } catch (Exception e) {
             e.printStackTrace();
         }

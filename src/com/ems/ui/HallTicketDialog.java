@@ -7,8 +7,10 @@ import com.ems.util.UiUtil;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -19,21 +21,92 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
-import java.awt.GridLayout;
+import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Window;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 public class HallTicketDialog extends JDialog {
-    public HallTicketDialog(java.awt.Frame owner, Student student, List<HallTicketEntry> entries) {
+
+    public static void promptAndOpen(Window owner, Student student, List<HallTicketEntry> entries) {
+        if (student == null || entries == null || entries.isEmpty()) {
+            JOptionPane.showMessageDialog(owner, "No exam schedule found for student " + (student != null ? student.getUsn() : ""));
+            return;
+        }
+
+        // Collect available category options
+        Set<String> categories = new LinkedHashSet<>();
+        categories.add("ALL EXAMS (All Categories)");
+        categories.add("INTERNAL");
+        categories.add("END_SEM");
+
+        for (HallTicketEntry entry : entries) {
+            if (entry.getExamType() != null && !entry.getExamType().isBlank()) {
+                categories.add(entry.getExamType().trim().toUpperCase());
+            }
+        }
+
+        String[] options = categories.toArray(new String[0]);
+        JComboBox<String> categoryBox = new JComboBox<>(options);
+        categoryBox.setFont(AppTheme.FONT_BODY);
+
+        JPanel panel = new JPanel(new BorderLayout(0, 10));
+        panel.add(new JLabel("Select Exam Category for Hall Ticket:"), BorderLayout.NORTH);
+        panel.add(categoryBox, BorderLayout.CENTER);
+
+        int result = JOptionPane.showConfirmDialog(
+                owner,
+                panel,
+                "Hall Ticket Category Selection",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.QUESTION_MESSAGE
+        );
+
+        if (result != JOptionPane.OK_OPTION) {
+            return; // Cancelled
+        }
+
+        String selectedCategory = (String) categoryBox.getSelectedItem();
+        List<HallTicketEntry> filteredEntries;
+
+        if (selectedCategory == null || selectedCategory.startsWith("ALL EXAMS")) {
+            filteredEntries = entries;
+            selectedCategory = "ALL EXAMS";
+        } else {
+            filteredEntries = new ArrayList<>();
+            for (HallTicketEntry e : entries) {
+                if (e.getExamType() != null && e.getExamType().equalsIgnoreCase(selectedCategory)) {
+                    filteredEntries.add(e);
+                }
+            }
+        }
+
+        if (filteredEntries.isEmpty()) {
+            JOptionPane.showMessageDialog(owner, "No exams found under category '" + selectedCategory + "' for this student.");
+            return;
+        }
+
+        Frame parentFrame = (owner instanceof Frame) ? (Frame) owner : null;
+        new HallTicketDialog(parentFrame, student, filteredEntries, selectedCategory).setVisible(true);
+    }
+
+    public HallTicketDialog(Frame owner, Student student, List<HallTicketEntry> entries) {
+        this(owner, student, entries, "ALL EXAMS");
+    }
+
+    public HallTicketDialog(Frame owner, Student student, List<HallTicketEntry> entries, String category) {
         super(owner, "Hall Ticket - " + student.getName() + " (" + student.getUsn() + ")", true);
         setSize(840, 960);
         setLocationRelativeTo(owner);
@@ -47,7 +120,8 @@ public class HallTicketDialog extends JDialog {
         card.setLayout(new BorderLayout(0, 12));
         card.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
-        JLabel header = new JLabel("Official Hall Ticket", JLabel.CENTER);
+        String headerTitle = "Official Hall Ticket" + (category != null && !category.isEmpty() && !category.startsWith("ALL EXAMS") ? " (" + category + ")" : "");
+        JLabel header = new JLabel(headerTitle, JLabel.CENTER);
         header.setFont(AppTheme.FONT_TITLE);
         header.setForeground(Color.BLACK);
         header.setBorder(BorderFactory.createEmptyBorder(18, 0, 8, 0));

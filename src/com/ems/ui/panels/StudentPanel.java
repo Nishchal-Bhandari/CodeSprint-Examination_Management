@@ -148,7 +148,7 @@ public class StudentPanel extends JPanel {
                     return;
                 }
 
-                new com.ems.ui.HallTicketDialog((java.awt.Frame) javax.swing.SwingUtilities.getWindowAncestor(this), studentInfo, entries).setVisible(true);
+                com.ems.ui.HallTicketDialog.promptAndOpen(javax.swing.SwingUtilities.getWindowAncestor(this), studentInfo, entries);
             } catch (Exception ex) {
                 UiUtil.error(this, ex);
             }
