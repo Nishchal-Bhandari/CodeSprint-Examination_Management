@@ -10,6 +10,9 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.geom.RoundRectangle2D;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
 import java.util.List;
 
 public class FacultyDutyPanel extends JPanel {
@@ -37,12 +40,10 @@ public class FacultyDutyPanel extends JPanel {
         form.setBorder(BorderFactory.createEmptyBorder(6, 6, 12, 6));
 
         JTextField examIdField = new JTextField("5001", 6);
-        JTextField roomNoField = new JTextField("A101", 6);
         JTextField roleField = new JTextField("INVIGILATOR", 12);
         JTextField countField = new JTextField("1", 4);
 
         UiUtil.styleInput(examIdField, 110);
-        UiUtil.styleInput(roomNoField, 130);
         UiUtil.styleInput(roleField, 180);
         UiUtil.styleInput(countField, 90);
         UiUtil.allowDigitsOnly(examIdField);
@@ -58,23 +59,19 @@ public class FacultyDutyPanel extends JPanel {
         form.add(examIdField, gbc);
 
         gbc.gridx = 2;
-        form.add(UiUtil.buildLabel("Room No"), gbc);
-        gbc.gridx = 3;
-        form.add(roomNoField, gbc);
-
-        gbc.gridx = 4;
         form.add(UiUtil.buildLabel("Role"), gbc);
-        gbc.gridx = 5;
+        gbc.gridx = 3;
         form.add(roleField, gbc);
 
-        gbc.gridx = 6;
-        form.add(UiUtil.buildLabel("Required Count"), gbc);
-        gbc.gridx = 7;
+        gbc.gridx = 4;
+        form.add(UiUtil.buildLabel("Required Count / Room"), gbc);
+        gbc.gridx = 5;
         form.add(countField, gbc);
 
-        JButton assignBtn = UiUtil.buildPrimaryButton("⚡ Auto Assign Invigilator");
+        JButton assignBtn = UiUtil.buildPrimaryButton("⚡ Auto Assign Faculty");
         JButton manualAssignBtn = UiUtil.buildSecondaryButton("➕ Manual Assign");
         JButton swapBtn = UiUtil.buildSecondaryButton("🔄 Swap Invigilators");
+        JButton downloadBtn = UiUtil.buildSecondaryButton("📥 Download Assignments");
         JButton refreshBtn = UiUtil.buildSecondaryButton("🔄 Refresh");
         JButton clearBtn = UiUtil.buildSecondaryButton("🗑 Clear Duties");
 
@@ -82,10 +79,11 @@ public class FacultyDutyPanel extends JPanel {
         actions.add(assignBtn);
         actions.add(manualAssignBtn);
         actions.add(swapBtn);
+        actions.add(downloadBtn);
         actions.add(refreshBtn);
         actions.add(clearBtn);
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 8;
+        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 6;
         gbc.weightx = 1.0; gbc.fill = GridBagConstraints.HORIZONTAL;
         form.add(actions, gbc);
 
@@ -128,7 +126,6 @@ public class FacultyDutyPanel extends JPanel {
         assignBtn.addActionListener(e -> {
             try {
                 int examId = Integer.parseInt(examIdField.getText().trim());
-                String roomNo = roomNoField.getText().trim();
                 String role = roleField.getText().trim();
                 int reqCount = Integer.parseInt(countField.getText().trim());
 
@@ -137,11 +134,11 @@ public class FacultyDutyPanel extends JPanel {
 
                 SwingWorker<String, Void> worker = new SwingWorker<>() {
                     @Override protected String doInBackground() throws Exception {
-                        return service.autoAssign(examId, roomNo, role, reqCount);
+                        return service.autoAssignExamAllRooms(examId, role, reqCount);
                     }
                     @Override protected void done() {
                         assignBtn.setEnabled(true);
-                        assignBtn.setText("⚡ Auto Assign Invigilator");
+                        assignBtn.setText("⚡ Auto Assign Faculty");
                         try {
                             String msg = get();
                             UiUtil.info(FacultyDutyPanel.this, msg);
@@ -160,6 +157,8 @@ public class FacultyDutyPanel extends JPanel {
         manualAssignBtn.addActionListener(e -> showManualAssignDialog());
 
         swapBtn.addActionListener(e -> showSwapDialog());
+
+        downloadBtn.addActionListener(e -> downloadAssignmentsCsv());
 
         refreshBtn.addActionListener(e -> refresh());
 
@@ -286,6 +285,44 @@ public class FacultyDutyPanel extends JPanel {
             } catch (Exception ex) {
                 UiUtil.error(this, ex);
             }
+        }
+    }
+
+    private void downloadAssignmentsCsv() {
+        try {
+            List<String[]> rows = service.all();
+            if (rows.isEmpty()) {
+                UiUtil.info(this, "No faculty duty assignments available to download.");
+                return;
+            }
+
+            JFileChooser chooser = new JFileChooser();
+            chooser.setDialogTitle("Save Faculty Assignment Details");
+            chooser.setSelectedFile(new File("faculty_assignments.csv"));
+
+            int userSelection = chooser.showSaveDialog(this);
+            if (userSelection == JFileChooser.APPROVE_OPTION) {
+                File fileToSave = chooser.getSelectedFile();
+                if (!fileToSave.getName().toLowerCase().endsWith(".csv")) {
+                    fileToSave = new File(fileToSave.getAbsolutePath() + ".csv");
+                }
+
+                try (PrintWriter writer = new PrintWriter(new FileWriter(fileToSave))) {
+                    writer.println("Duty ID,Exam ID,Room No,Role,Faculty ID,Faculty Name,Faculty Department");
+                    for (String[] r : rows) {
+                        StringBuilder sb = new StringBuilder();
+                        for (int i = 0; i < r.length; i++) {
+                            String val = r[i] != null ? r[i].replace("\"", "\"\"") : "";
+                            sb.append("\"").append(val).append("\"");
+                            if (i < r.length - 1) sb.append(",");
+                        }
+                        writer.println(sb.toString());
+                    }
+                }
+                UiUtil.info(this, "Faculty assignments downloaded successfully to:\n" + fileToSave.getAbsolutePath());
+            }
+        } catch (Exception ex) {
+            UiUtil.error(this, ex);
         }
     }
 }

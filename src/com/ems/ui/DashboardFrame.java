@@ -37,8 +37,9 @@ public class DashboardFrame extends JFrame {
     public DashboardFrame(String username, String role) {
         setTitle("EMS Dashboard");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(1360, 840);
-        setMinimumSize(new Dimension(1024, 768));
+        setSize(1440, 900);
+        setMinimumSize(new Dimension(1100, 768));
+        setExtendedState(JFrame.MAXIMIZED_BOTH);
         setLocationRelativeTo(null);
         
         JPanel root = new JPanel(new BorderLayout());
@@ -63,8 +64,6 @@ public class DashboardFrame extends JFrame {
         contentCardPanel.add(new FacultyDutyPanel(), "duty");
         contentCardPanel.add(new FacultyPanel(), "faculty");
         contentCardPanel.add(new AttendanceConductPanel(), "attendance");
-        contentCardPanel.add(new AnswerSheetPanel(), "answer");
-        contentCardPanel.add(new ReportsAuditPanel(), "reports");
         contentCardPanel.add(new NotificationsPanel(), "notifications");
         contentCardPanel.add(new AccessSecurityPanel(), "security");
         contentCardPanel.add(new AiCopilotPanel(), "ai_copilot");
@@ -224,12 +223,10 @@ public class DashboardFrame extends JFrame {
         navContainer.add(createNavButton("📋", "Faculty management", "faculty"));
         CustomNavButton attendanceBtn = createNavButton("✅", "Attendance & conduct", "attendance");
         navContainer.add(attendanceBtn);
-        navContainer.add(createNavButton("📄", "Answer sheets", "answer"));
         
         navContainer.add(Box.createVerticalStrut(10));
         navContainer.add(createSectionHeader("SYSTEM"));
-        navContainer.add(createNavButton("🤖", "AI Copilot", "ai_copilot"));
-        navContainer.add(createNavButton("📊", "Reports & audit", "reports"));
+        navContainer.add(createNavButton("🤖", "Examination Assistant", "ai_copilot"));
         navContainer.add(createNavButton("🔔", "Notifications", "notifications"));
         navContainer.add(createNavButton("🔒", "Access & security", "security"));
         

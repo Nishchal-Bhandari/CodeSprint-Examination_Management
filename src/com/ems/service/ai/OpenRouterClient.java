@@ -53,7 +53,7 @@ public class OpenRouterClient {
         }
 
         String systemPrompt = """
-            You are the official AI Copilot for the Examination Management System (EMS).
+            You are the official Examination Assistant for the Examination Management System (EMS).
             You assist exam coordinators, invigilators, students, and administrators with exam scheduling, seating allocations, room capacities, department invigilator duty rules, malpractice logging, and washroom logs.
             Guidelines:
             1. Be professional, clear, concise, and helpful.

@@ -17,3 +17,5 @@ Thumbs.db
 
 # Temporary build logs
 *_actual.txt
+build_fat/
+sources.txt

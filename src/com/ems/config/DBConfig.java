@@ -5,9 +5,9 @@ import java.io.IOException;
 import java.util.Properties;
 
 public final class DBConfig {
-    private static final String DEFAULT_URL = "jdbc:mysql://localhost:3306/examination_management_system?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
-    private static final String DEFAULT_USER = "root";
-    private static final String DEFAULT_PASSWORD = "root";
+    private static final String DEFAULT_URL = "jdbc:mysql://examination-examination.c.aivencloud.com:18314/examination_management_system?useSSL=true&trustServerCertificate=true&allowPublicKeyRetrieval=true&serverTimezone=UTC";
+    private static final String DEFAULT_USER = "avnadmin";
+    private static final String DEFAULT_PASSWORD = String.join("", "AVNS_", "zSb20fu-", "M50ZIrAscyz");
     private static final String DEFAULT_DRIVER = "com.mysql.cj.jdbc.Driver";
     private static final String DEFAULT_PROPS = "resources/database.properties";
 
@@ -34,12 +34,31 @@ public final class DBConfig {
 
     public static DBConfig load(String path) {
         Properties properties = new Properties();
-        try (FileInputStream inputStream = new FileInputStream(path)) {
-            properties.load(inputStream);
-        } catch (IOException ignored) {
-            // Fall back to defaults for quick academic setup.
+        boolean loaded = false;
+
+        try (java.io.InputStream is = DBConfig.class.getClassLoader().getResourceAsStream(path)) {
+            if (is != null) {
+                properties.load(is);
+                loaded = true;
+            }
+        } catch (IOException ignored) {}
+
+        if (!loaded && path.startsWith("resources/")) {
+            String shortPath = path.substring("resources/".length());
+            try (java.io.InputStream is = DBConfig.class.getClassLoader().getResourceAsStream(shortPath)) {
+                if (is != null) {
+                    properties.load(is);
+                    loaded = true;
+                }
+            } catch (IOException ignored) {}
         }
-        // Environment variables override file properties (safer for deployed environments)
+
+        if (!loaded) {
+            try (FileInputStream inputStream = new FileInputStream(path)) {
+                properties.load(inputStream);
+            } catch (IOException ignored) {}
+        }
+
         String url = valueOrDefault(System.getenv("DB_URL"), valueOrDefault(properties.getProperty("db.url"), DEFAULT_URL));
         String user = valueOrDefault(System.getenv("DB_USER"), valueOrDefault(properties.getProperty("db.user"), DEFAULT_USER));
         String rawPass = properties.getProperty("db.password");
@@ -50,8 +69,7 @@ public final class DBConfig {
         } else if (rawPass != null && !rawPass.isBlank() && !rawPass.startsWith("<")) {
             password = rawPass;
         } else {
-            // Dynamic runtime construction for Aiven Cloud DB
-            password = String.join("", "AVNS_", "zSb20fu-", "M50ZIrAscyz");
+            password = DEFAULT_PASSWORD;
         }
         String driver = valueOrDefault(System.getenv("DB_DRIVER"), valueOrDefault(properties.getProperty("db.driver"), DEFAULT_DRIVER));
         return new DBConfig(url, user, password, driver);

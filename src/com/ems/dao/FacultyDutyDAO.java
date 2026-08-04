@@ -31,6 +31,35 @@ public class FacultyDutyDAO {
         }
     }
 
+    public List<String> fetchRoomsForExam(int examId) throws SQLException {
+        String sql = "SELECT DISTINCT b.room_no " +
+                "FROM seating_allocation sa " +
+                "JOIN bench b ON sa.bench_no = b.bench_no " +
+                "WHERE sa.exam_id = ? " +
+                "ORDER BY b.room_no";
+        List<String> rooms = new ArrayList<>();
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setInt(1, examId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rooms.add(rs.getString("room_no"));
+                }
+            }
+        }
+        if (rooms.isEmpty()) {
+            String fallbackSql = "SELECT room_no FROM room ORDER BY room_no";
+            try (Connection connection = DBConnection.getConnection();
+                 PreparedStatement ps = connection.prepareStatement(fallbackSql);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rooms.add(rs.getString("room_no"));
+                }
+            }
+        }
+        return rooms;
+    }
+
     public boolean manualAssignDuty(int examId, String roomNo, int facultyId, String role) throws SQLException {
         String insertSql = "INSERT INTO faculty_duty (faculty_id, exam_id, room_no, role) VALUES (?, ?, ?, ?)";
         String updateWorkloadSql = "UPDATE faculty SET workload = workload + 1 WHERE faculty_id = ?";

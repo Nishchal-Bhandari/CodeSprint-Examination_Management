@@ -91,7 +91,7 @@ public class AiCopilotPanel extends JPanel {
         });
 
         // Initial welcome message
-        appendAiMessage("Hello! 👋 I am your **EMS AI Copilot**.\n\n"
+        appendAiMessage("Hello! 👋 I am your **Examination Assistant**.\n\n"
                 + "I can help you with:\n"
                 + "• Drafting official malpractice reports\n"
                 + "• Reviewing invigilator duty rules & department conflict constraints\n"
@@ -104,7 +104,7 @@ public class AiCopilotPanel extends JPanel {
         header.setOpaque(false);
 
         JPanel titles = UiUtil.buildPageHeader(
-                "🤖 EMS AI Copilot",
+                "🤖 Examination Assistant",
                 "Conversational Assistant powered by OpenRouter (Free Auto-Router Engine)"
         );
 
@@ -247,7 +247,7 @@ public class AiCopilotPanel extends JPanel {
 
         JLabel msg = new JLabel("<html><body style='width: 540px; color: #F8FAFC; font-family: Segoe UI; font-size: 13px;'>"
                 + htmlText
-                + "<br><div style='text-align: right; color: #94A3B8; font-size: 10px; margin-top: 4px;'>" + time + " • AI Copilot</div>"
+                + "<br><div style='text-align: right; color: #94A3B8; font-size: 10px; margin-top: 4px;'>" + time + " • Examination Assistant</div>"
                 + "</body></html>");
 
         bubble.add(msg, BorderLayout.CENTER);

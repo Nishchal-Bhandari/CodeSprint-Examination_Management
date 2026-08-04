@@ -35,14 +35,10 @@ public class AttendanceConductPanel extends JPanel {
         form.setOpaque(false);
         form.setBorder(BorderFactory.createEmptyBorder(4, 4, 10, 4));
 
-        JTextField examIdField = new JTextField(8); UiUtil.styleInput(examIdField, 100); UiUtil.allowDigitsOnly(examIdField);
+        JTextField examIdField = new JTextField("5001", 8); UiUtil.styleInput(examIdField, 100); UiUtil.allowDigitsOnly(examIdField);
         JComboBox<String> usnBox = new JComboBox<>();
         usnBox.setFont(com.ems.util.AppTheme.FONT_BODY);
         usnBox.setPreferredSize(new Dimension(140, 38));
-        
-        JComboBox<String> presentBox = new JComboBox<>(new String[]{"Present","Absent"});
-        presentBox.setFont(com.ems.util.AppTheme.FONT_BODY);
-        presentBox.setPreferredSize(new Dimension(120, 38));
 
         // Malpractice sub-fields
         JTextField roomField     = new JTextField(8);  UiUtil.styleInput(roomField, 100);
@@ -58,26 +54,28 @@ public class AttendanceConductPanel extends JPanel {
         gbc.insets = new Insets(6,8,6,8);
         gbc.anchor = GridBagConstraints.WEST;
 
-        // Row 0: Exam ID + USN + status
+        // Row 0: Exam ID + Bulk Attendance Actions
         gbc.gridy = 0;
         gbc.gridx = 0; form.add(UiUtil.buildLabel("Exam ID"), gbc);
         gbc.gridx = 1; form.add(examIdField, gbc);
-        gbc.gridx = 2; form.add(UiUtil.buildLabel("USN"), gbc);
-        gbc.gridx = 3; form.add(usnBox, gbc);
-        gbc.gridx = 4; form.add(UiUtil.buildLabel("Status"), gbc);
-        gbc.gridx = 5; form.add(presentBox, gbc);
 
-        // Attendance buttons
-        gbc.gridy = 1; gbc.gridx = 0; gbc.gridwidth = 6;
-        gbc.anchor = GridBagConstraints.EAST;
-        JButton markBtn = UiUtil.buildPrimaryButton("Mark Attendance");
-        JButton loadBtn = UiUtil.buildSecondaryButton("Load Attendance");
+        JButton loadBtn = UiUtil.buildSecondaryButton("📋 Load Students");
+        JButton markAllPresentBtn = UiUtil.buildSecondaryButton("✅ Mark All Present");
+        JButton markAllAbsentBtn = UiUtil.buildSecondaryButton("❌ Mark All Absent");
+        JButton saveAllBtn = UiUtil.buildPrimaryButton("💾 Save Attendance for All");
+
         JPanel attRow = UiUtil.buildActionRow();
-        attRow.add(markBtn); attRow.add(loadBtn);
+        attRow.add(loadBtn); attRow.add(markAllPresentBtn); attRow.add(markAllAbsentBtn); attRow.add(saveAllBtn);
+        gbc.gridx = 2; gbc.gridwidth = 4; gbc.fill = GridBagConstraints.HORIZONTAL;
         form.add(attRow, gbc);
-        
-        gbc.anchor = GridBagConstraints.WEST;
+
+        gbc.fill = GridBagConstraints.NONE;
         gbc.gridwidth = 1;
+
+        // Row 1: Single Malpractice Target USN
+        gbc.gridy = 1;
+        gbc.gridx = 0; form.add(UiUtil.buildLabel("Target USN"), gbc);
+        gbc.gridx = 1; form.add(usnBox, gbc);
 
         // Row 2: Malpractice 1
         gbc.gridy = 2;
@@ -134,23 +132,63 @@ public class AttendanceConductPanel extends JPanel {
         formCard.add(form, BorderLayout.CENTER);
 
         // ---- Tables ----
-        attModel = new DefaultTableModel(new Object[]{"USN","Name","Status"}, 0) {
-            @Override public boolean isCellEditable(int r, int c) { return false; }
+        attModel = new DefaultTableModel(new Object[]{"USN", "Student Name", "Current Status", "Mark Present"}, 0) {
+            @Override public Class<?> getColumnClass(int columnIndex) {
+                if (columnIndex == 3) return Boolean.class;
+                return String.class;
+            }
+            @Override public boolean isCellEditable(int r, int c) { return c == 3; }
         };
         JTable attTable = new JTable(attModel);
         UiUtil.styleTable(attTable);
-        // Colour-code rows
+        attTable.setRowHeight(38);
+        attTable.getColumnModel().getColumn(0).setPreferredWidth(140);
+        attTable.getColumnModel().getColumn(1).setPreferredWidth(260);
+        attTable.getColumnModel().getColumn(2).setPreferredWidth(150);
+        attTable.getColumnModel().getColumn(3).setPreferredWidth(120);
+
+        // High contrast colour-code renderer for dark theme
         attTable.setDefaultRenderer(Object.class, new javax.swing.table.DefaultTableCellRenderer() {
             @Override public Component getTableCellRendererComponent(JTable t, Object v, boolean sel, boolean foc, int r, int c) {
                 Component comp = super.getTableCellRendererComponent(t, v, sel, foc, r, c);
-                if (!sel) {
+                if (sel) {
+                    comp.setBackground(t.getSelectionBackground());
+                    comp.setForeground(t.getSelectionForeground());
+                } else {
                     String status = (String) t.getModel().getValueAt(r, 2);
-                    if ("Absent".equals(status)) comp.setBackground(new Color(255, 235, 235));
-                    else if ("Present".equals(status)) comp.setBackground(new Color(230, 255, 240));
-                    else comp.setBackground(Color.WHITE);
+                    if ("Absent".equalsIgnoreCase(status)) {
+                        comp.setBackground(new Color(69, 10, 10));
+                        comp.setForeground(new Color(254, 202, 202));
+                    } else if ("Present".equalsIgnoreCase(status)) {
+                        comp.setBackground(new Color(6, 78, 59));
+                        comp.setForeground(new Color(167, 243, 208));
+                    } else {
+                        comp.setBackground(com.ems.util.AppTheme.SURFACE_BG);
+                        comp.setForeground(com.ems.util.AppTheme.TEXT);
+                    }
                 }
                 return comp;
             }
+        });
+
+        // Checkbox renderer matching row background
+        attTable.getColumnModel().getColumn(3).setCellRenderer((t, val, sel, foc, r, c) -> {
+            JCheckBox box = new JCheckBox();
+            box.setHorizontalAlignment(SwingConstants.CENTER);
+            box.setSelected(Boolean.TRUE.equals(val));
+            if (sel) {
+                box.setBackground(t.getSelectionBackground());
+            } else {
+                String status = (String) t.getModel().getValueAt(r, 2);
+                if ("Absent".equalsIgnoreCase(status)) {
+                    box.setBackground(new Color(69, 10, 10));
+                } else if ("Present".equalsIgnoreCase(status)) {
+                    box.setBackground(new Color(6, 78, 59));
+                } else {
+                    box.setBackground(com.ems.util.AppTheme.SURFACE_BG);
+                }
+            }
+            return box;
         });
 
         mpModel = new DefaultTableModel(new Object[]{"ID","USN","Name","Room","Incident","Description","Reported At"}, 0) {
@@ -200,15 +238,12 @@ public class AttendanceConductPanel extends JPanel {
             }
         });
 
-        markBtn.addActionListener(e -> {
+        loadBtn.addActionListener(e -> {
             try {
                 int examId = Integer.parseInt(examIdField.getText().trim());
-                boolean present = "Present".equals(presentBox.getSelectedItem());
-                String selectedUsn = (String) usnBox.getSelectedItem();
-                if (selectedUsn == null) throw new IllegalArgumentException("No USN selected");
-                service.mark(selectedUsn, examId, present);
-                UiUtil.info(this, "Attendance marked");
+                loadUsnAction.actionPerformed(null);
                 loadAtt(examId);
+                tabs.setSelectedIndex(0);
             } catch (NumberFormatException nfe) {
                 UiUtil.error(this, new IllegalArgumentException("Exam ID must be numeric"));
             } catch (Exception ex) {
@@ -216,10 +251,39 @@ public class AttendanceConductPanel extends JPanel {
             }
         });
 
-        loadBtn.addActionListener(e -> {
+        markAllPresentBtn.addActionListener(e -> {
+            int rowCount = attModel.getRowCount();
+            for (int i = 0; i < rowCount; i++) {
+                attModel.setValueAt(Boolean.TRUE, i, 3);
+            }
+        });
+
+        markAllAbsentBtn.addActionListener(e -> {
+            int rowCount = attModel.getRowCount();
+            for (int i = 0; i < rowCount; i++) {
+                attModel.setValueAt(Boolean.FALSE, i, 3);
+            }
+        });
+
+        saveAllBtn.addActionListener(e -> {
             try {
-                loadAtt(Integer.parseInt(examIdField.getText().trim()));
-                tabs.setSelectedIndex(0);
+                int examId = Integer.parseInt(examIdField.getText().trim());
+                int rowCount = attModel.getRowCount();
+                if (rowCount == 0) {
+                    UiUtil.info(this, "No students loaded for Exam #" + examId);
+                    return;
+                }
+                int saved = 0;
+                for (int i = 0; i < rowCount; i++) {
+                    String usn = (String) attModel.getValueAt(i, 0);
+                    Boolean isPresent = (Boolean) attModel.getValueAt(i, 3);
+                    if (usn != null && isPresent != null) {
+                        service.mark(usn, examId, isPresent);
+                        saved++;
+                    }
+                }
+                UiUtil.info(this, "Successfully saved attendance for " + saved + " student(s)!");
+                loadAtt(examId);
             } catch (NumberFormatException nfe) {
                 UiUtil.error(this, new IllegalArgumentException("Exam ID must be numeric"));
             } catch (Exception ex) {
@@ -302,7 +366,13 @@ public class AttendanceConductPanel extends JPanel {
     private void loadAtt(int examId) throws Exception {
         List<String[]> rows = service.report(examId);
         attModel.setRowCount(0);
-        for (String[] r : rows) attModel.addRow(r);
+        for (String[] r : rows) {
+            String usn = r[0];
+            String name = r[1];
+            String status = r[2];
+            boolean isPresent = !"Absent".equalsIgnoreCase(status);
+            attModel.addRow(new Object[]{usn, name, status, Boolean.valueOf(isPresent)});
+        }
     }
 
     private void loadMp(int examId) throws Exception {

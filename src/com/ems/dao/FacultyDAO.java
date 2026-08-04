@@ -38,6 +38,16 @@ public class FacultyDAO {
         }
     }
 
+    public void updateAvailability(int facultyId, String availability) throws SQLException {
+        String sql = "UPDATE faculty SET availability = ? WHERE faculty_id = ?";
+        try (Connection connection = DBConnection.getConnection();
+             PreparedStatement ps = connection.prepareStatement(sql)) {
+            ps.setString(1, availability);
+            ps.setInt(2, facultyId);
+            ps.executeUpdate();
+        }
+    }
+
     public List<Faculty> getAllFaculty() throws SQLException {
         String sql = "SELECT faculty_id, faculty_name, dept_id, workload, availability, email FROM faculty ORDER BY faculty_id";
         List<Faculty> list = new ArrayList<>();

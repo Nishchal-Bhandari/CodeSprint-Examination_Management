@@ -14,6 +14,34 @@ public class FacultyDutyService {
         return dao.autoAssignDuty(examId, roomNo.trim(), role.trim(), requiredCount);
     }
 
+    public String autoAssignExamAllRooms(int examId, String role, int requiredCount) throws Exception {
+        if (examId <= 0) throw new IllegalArgumentException("Exam ID must be positive");
+        if (role == null || role.trim().isEmpty()) role = "INVIGILATOR";
+        if (requiredCount <= 0) requiredCount = 1;
+
+        List<String> rooms = dao.fetchRoomsForExam(examId);
+        if (rooms.isEmpty()) {
+            return "No rooms found or allotted for Exam ID #" + examId;
+        }
+
+        int totalRoomsProcessed = 0;
+        int successCount = 0;
+        StringBuilder details = new StringBuilder();
+
+        for (String roomNo : rooms) {
+            totalRoomsProcessed++;
+            try {
+                String msg = dao.autoAssignDuty(examId, roomNo, role.trim(), requiredCount);
+                successCount++;
+                details.append("Room ").append(roomNo).append(": ").append(msg).append("\n");
+            } catch (Exception ex) {
+                details.append("Room ").append(roomNo).append(" Error: ").append(ex.getMessage()).append("\n");
+            }
+        }
+
+        return "Processed " + totalRoomsProcessed + " room(s) for Exam #" + examId + " (" + successCount + " successful).\n\n" + details.toString().trim();
+    }
+
     public boolean manualAssign(int examId, String roomNo, int facultyId, String role) throws Exception {
         if (examId <= 0) throw new IllegalArgumentException("Valid Exam ID required");
         if (roomNo == null || roomNo.trim().isEmpty()) throw new IllegalArgumentException("Room number required");

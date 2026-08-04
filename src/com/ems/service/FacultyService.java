@@ -20,6 +20,16 @@ public class FacultyService {
         dao.deleteFaculty(facultyId);
     }
 
+    public void updateAvailability(int facultyId, String availability) throws Exception {
+        if (facultyId <= 0) {
+            throw new IllegalArgumentException("Faculty ID must be positive");
+        }
+        if (availability == null || availability.trim().isEmpty()) {
+            throw new IllegalArgumentException("Availability status is required");
+        }
+        dao.updateAvailability(facultyId, availability.trim());
+    }
+
     public List<Faculty> all() throws Exception {
         return dao.getAllFaculty();
     }
