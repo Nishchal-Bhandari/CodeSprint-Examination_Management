@@ -1,151 +1,143 @@
-# Examination Management System — Project Documentation
+# Examination Management System (EMS) — Technical & User Documentation
 
-This document explains the Examination Management System (EMS) implemented in this workspace, how it works, system architecture, database design, key components and a step-by-step demo flow you can show to an instructor.
-
----
-
-## 1) Quick summary
-- Purpose: a lightweight exam scheduling and administration system that supports student/subject management, exam scheduling, room & bench setup, automated seat allocation, faculty duty assignment, and hall-ticket generation.
-- Technology: MySQL (schema + triggers + stored procedures) and Java Swing (JDK 11+), JDBC.
-- Layers: UI (Swing) → Service → DAO → MySQL.
-
-## 2) Repository layout (important files)
-- [db/full_workbench_script.sql](db/full_workbench_script.sql) — full schema, triggers, stored procedures, and sample data.
-- [resources/database.properties](resources/database.properties) — JDBC config used in development (overridden by env vars in production via `DBConfig`).
-- Java sources: `src/com/ems/...`:
-  - UI: [src/com/ems/ui/LoginFrame.java](src/com/ems/ui/LoginFrame.java), [src/com/ems/ui/DashboardFrame.java](src/com/ems/ui/DashboardFrame.java), [src/com/ems/ui/HallTicketDialog.java](src/com/ems/ui/HallTicketDialog.java)
-  - Panels: [src/com/ems/ui/panels/StudentPanel.java](src/com/ems/ui/panels/StudentPanel.java), [src/com/ems/ui/panels/ExamPanel.java](src/com/ems/ui/panels/ExamPanel.java), [src/com/ems/ui/panels/RoomBenchPanel.java](src/com/ems/ui/panels/RoomBenchPanel.java), [src/com/ems/ui/panels/SeatingAllocationPanel.java](src/com/ems/ui/panels/SeatingAllocationPanel.java), [src/com/ems/ui/panels/FacultyDutyPanel.java](src/com/ems/ui/panels/FacultyDutyPanel.java), [src/com/ems/ui/panels/SubjectPanel.java](src/com/ems/ui/panels/SubjectPanel.java), [src/com/ems/ui/panels/DepartmentPanel.java](src/com/ems/ui/panels/DepartmentPanel.java)
-  - Config/DB: [src/com/ems/config/DBConfig.java](src/com/ems/config/DBConfig.java), [src/com/ems/config/DBConnection.java](src/com/ems/config/DBConnection.java)
-  - DAO/Service: `src/com/ems/dao/*`, `src/com/ems/service/*` (e.g. `ExamDAO`, `StudentDAO`, `ExamService`)
-  - Utilities: [src/com/ems/util/UiUtil.java](src/com/ems/util/UiUtil.java), [src/com/ems/util/PasswordUtil.java](src/com/ems/util/PasswordUtil.java), [src/com/ems/util/LoggerUtil.java](src/com/ems/util/LoggerUtil.java)
-
-(Click the links above to open files in the editor.)
-
-## 3) Database design — important tables (high-level)
-- `student(usn, name, email, dept_id, semester)` — students master data.
-- `subject(subject_code, dept_id, subject_name, semester)` — subjects.
-- `exam(exam_id, exam_date, subject_code, exam_type)` — exam schedule.
-- `room(room_no, block, total_benches)` and `bench(bench_no, room_no, capacity)` — physical seating layout.
-- `seating_allocation(seat_id, bench_no, usn, exam_id, seat_position)` — seat assignments per exam.
-- `faculty(faculty_id, faculty_name, dept_id, workload, availability)` and `faculty_duty(...)` — faculty & duties.
-- `app_user(username, password_hash, role, is_active)` — application users/roles.
-
-Refer to [db/full_workbench_script.sql](db/full_workbench_script.sql) for FKs, CHECKs, triggers and stored procedures.
-
-## 4) Triggers & Stored Procedures
-- `trg_prevent_bench_overflow` — prevents bench overfill and seat-position overflow.
-- `sp_auto_allocate_seats(p_exam_id)` — allocates seats to all students of the subject's department in order.
-- `sp_assign_faculty_duties(p_exam_id, p_room_no, p_role, p_required_count)` — assigns available faculty up to a workload cap.
-
-These procedures encapsulate the complex allocation logic and should be executed by the application via DAO calls (see `AllocationDAO`, `FacultyDutyDAO`).
-
-## 5) Application architecture
-- DB: access via `DBConnection.getConnection()` which reads `resources/database.properties` but prefers environment variables (`DB_URL`, `DB_USER`, `DB_PASSWORD`, `DB_DRIVER`).
-- DAO layer: low-level SQL + ResultSet → Model mapping. See `src/com/ems/dao` for examples.
-- Service layer: business validations and workflow orchestration. See `src/com/ems/service`.
-- UI layer: Swing frames & panels under `src/com/ems/ui`. `DashboardFrame` contains navigation and content cards for panels.
-- Utilities: `UiUtil` (styling + dialogs), `PasswordUtil` (PBKDF2 password hashing), `LoggerUtil` (file logging).
-
-## 6) Key runtime flows (detailed step-by-step) — demo script to show instructor
-Follow this script during the demo. Each step indicates the components involved.
-
-1) Setup environment & DB (one-time)
-   - Start MySQL, run `db/full_workbench_script.sql` in Workbench to create the schema and sample data.
-   - Place MySQL Connector/J JAR in `lib/` (e.g. `mysql-connector-j-9.7.0.jar`).
-   - Optionally set environment variables for production:
-     ```powershell
-     $env:DB_URL='jdbc:mysql://localhost:3306/examination_management_system?useSSL=false&serverTimezone=UTC'
-     $env:DB_USER='root'
-     $env:DB_PASSWORD='yourpassword'
-     ```
-
-2) Start the application (local dev)
-   - Compile (from project root):
-     ```powershell
-     Get-ChildItem -Path "src" -Recurse -Filter *.java | ForEach-Object { (Resolve-Path -Relative $_.FullName) } | Set-Content -Path sources.txt
-     cmd /c "javac -d out @sources.txt"
-     ```
-   - Run the app (ensure `lib/mysql-connector-j-*.jar` present):
-     ```powershell
-     java -cp "out;lib/*" com.ems.App
-     ```
-
-3) Login (UI)
-   - Use seeded accounts (for demo):
-     - Admin: `admin` / `admin123` (role: ADMIN)
-     - Exam Cell: `examcell` / `exam123` (role: EXAM_CELL)
-     - Viewer: `viewer` / `view123` (role: VIEWER)
-   - Authentication flow: `LoginFrame` → `AuthService` → `UserDAO.authenticate()` uses `PasswordUtil.verify()`; legacy plaintext passwords are migrated on first successful login.
-
-4) Student Management (Admin)
-   - Add a student: fill `USN`, `Name`, `Email`, `Dept ID`, `Sem` → `Add` (validations in `StudentService` + `StudentDAO` persists to `student` table).
-   - Update student: enter the `USN` and new fields → `Update`.
-   - Delete student: enter `USN` → `Delete by USN` (prompts confirmation).
-   - Generate Hall Ticket: select student row or enter USN → `Generate Hall Ticket` (fetches exams via `ExamService.hallTicketForStudent()` → `ExamDAO.getExamsForStudent()` and opens `HallTicketDialog` for print/preview).
-
-5) Subject & Exam scheduling
-   - Manage subjects in `Subject Management` (add/update/delete).
-   - Create exam in `Exam Scheduling` with a date picker and subject dropdown (subject list refreshed from DB).
-
-6) Room & Bench Setup
-   - Add rooms & benches with capacities. UI will validate numeric inputs.
-
-7) Seat Allocation & Faculty Assignment
-   - Run `Run Auto Allocation` in `Seat Allocation` (calls `sp_auto_allocate_seats` via `AllocationDAO` or `AllocationService`).
-   - Auto-assign faculty duties using `Faculty Assignment` (calls `sp_assign_faculty_duties`).
-   - Clear allocations/duties if you want to re-run (UI has `Clear` actions).
-
-8) Logging & Troubleshooting
-   - Errors are logged to `logs/app.log` (see `src/com/ems/util/LoggerUtil.java`). The UI shows friendly errors and critical exceptions are recorded with stack traces.
-
-## 7) Where to find important logic
-- Seat allocation: `src/com/ems/dao/AllocationDAO.java` and `db/full_workbench_script.sql` (`sp_auto_allocate_seats`).
-- Faculty duty assignment: `src/com/ems/dao/FacultyDutyDAO.java` and `sp_assign_faculty_duties` in SQL script.
-- Hall ticket: `src/com/ems/service/ExamService.hallTicketForStudent()` → `src/com/ems/dao/ExamDAO.getExamsForStudent()` → `src/com/ems/ui/HallTicketDialog.java`.
-- Authentication/migration: `src/com/ems/dao/UserDAO.java` and `src/com/ems/util/PasswordUtil.java`.
-
-## 8) Common instructor Q&A (prepared answers)
-Q: How are seats assigned automatically?
-A: The stored-procedure `sp_auto_allocate_seats` computes a list of bench-seat slots and assigns students by row-number ordering; it enforces capacity checks and uses transactions to avoid partial assignments.
-
-Q: How is faculty workload managed?
-A: `sp_assign_faculty_duties` picks available faculty with workload below a cap (SQL cursor) and increments workload on assignment; the UI calls it via `FacultyDutyService`.
-
-Q: Is authentication secure?
-A: Passwords are stored using PBKDF2 hashes via `PasswordUtil`. Legacy plaintext passwords are migrated on login; in production provide hashed passwords or reset them.
-
-Q: Can the application scale?
-A: This is a single-node Swing app backed by MySQL. Scaling to many users requires moving UI to a web UI or desktop clients coordinating via a server API.
-
-## 9) Testing & demo checklist (step-by-step)
-Before your demo, ensure:
-1. MySQL running and DB initialized (`db/full_workbench_script.sql`).
-2. `lib/mysql-connector-j-*.jar` present.
-3. `out/` classes compiled (`javac -d out @sources.txt`).
-4. Launch the app and login as `admin`.
-
-Walkthrough to show instructor:
-1. Show DB schema in MySQL Workbench (tables, FKs, triggers).
-2. Show `LoginFrame` and successful login.
-3. Add a sample student and refresh the table.
-4. Add a subject and create an exam for that subject.
-5. Setup a room and bench with capacity.
-6. Run `Run Auto Allocation` for the exam and show seating allocation results.
-7. Run `Auto Assign Faculty` and show assigned duties.
-8. Select the student and `Generate Hall Ticket` → preview and print.
-
-## 10) Known limitations and next improvements
-- No build system (Maven/Gradle); adding one would simplify dependency management and packaging.
-- Basic UI — accessibility and UX can be improved (keyboard navigation, form autofill on row select).
-- No automated tests — add unit + integration tests for DAOs and services.
-- No RBAC beyond simple roles; add permissions checks in the UI and service layer for stronger access control.
-- Consider moving to a server-client architecture for multi-user access and concurrency control.
+This document explains the Examination Management System (EMS) implemented in this workspace, its architecture, database design, key components, and step-by-step instructions to run and demonstrate the application.
 
 ---
 
-If you'd like, I can:
-- Produce a one-page slide (PDF) summarizing the demo steps only.
-- Generate a shorter "demo script" version tailored to a 10-minute demonstration.
-- Add inline comments in the most important files to help present code during the walkthrough.
+## 1) Quick Summary
+- **Purpose**: A comprehensive college examination administration system supporting student & subject management, exam scheduling, room & bench layout setup, automated seating allocation (with department clash prevention), smart faculty invigilator duty scheduling, bulk attendance marking, visual workload analytics, and an integrated **Examination Assistant** AI Copilot.
+- **Technology Stack**: Java 11+ (Swing UI), JDBC, MySQL (Aiven Cloud / Local Workbench script with triggers & stored procedures).
+- **Architecture**: UI Layer (Swing Panels) → Service Layer → DAO Layer → MySQL Database.
 
-Which of the above would help you most for the instructor presentation?
+---
+
+## 2) Repository Layout & Key Source Files
+
+```
+Examination Management System/
+├── db/                                  # Database SQL Scripts
+│   ├── full_workbench_script.sql        # Core tables & schema
+│   ├── migration_new_modules.sql        # Attendance & security modules
+│   └── migration_ps6_smart_allocation.sql # PS-6 Department constraints & slots
+├── dist/                                # Executable Distribution
+│   └── ExaminationManagementSystem.jar  # Standalone Fat JAR (bundled MySQL driver)
+├── lib/                                 # Third-party Libraries
+│   └── mysql-connector-j-9.7.0.jar      # MySQL JDBC Driver
+├── resources/                           # Configuration Files
+│   └── database.properties              # Cloud JDBC Connection Settings
+├── src/com/ems/                         # Java Source Code
+│   ├── config/                          # DBConfig & DBConnection (ClassLoader + Lazy Load)
+│   ├── dao/                             # AllocationDAO, FacultyDAO, FacultyDutyDAO, StudentDAO, etc.
+│   ├── model/                           # Entity Models (Faculty, Student, ExamAttendance, etc.)
+│   ├── service/                         # Business Services (FacultyDutyService, AttendanceService, etc.)
+│   │   └── ai/                          # OpenRouterClient.java (Examination Assistant AI)
+│   ├── ui/                              # DashboardFrame.java & LoginFrame.java
+│   │   └── panels/                      # UI Panels (FacultyDutyPanel, FacultyPanel, AttendanceConductPanel, AiCopilotPanel, etc.)
+│   └── util/                            # AnimationEngine, UiUtil, AppTheme, ToastManager
+├── PROJECT_DOCUMENTATION.md             # Complete Technical Documentation
+└── README.md                            # Quick Start Guide
+```
+
+---
+
+## 3) Key Modules & Features
+
+### A. 👤 Faculty Duty Assignment (Auto-Assign by Exam ID)
+- **Exam ID Assignment**: Allows assigning faculty by specifying an `Exam ID` (e.g. `5001`). The system queries all rooms allotted to that exam and automatically assigns invigilators for every room in one action.
+- **Department Conflict Prevention**: Ensures faculty are **never assigned to invigilate exams of their own department**.
+- **Download Assignments CSV**: Export faculty duty schedules to a local `.csv` file for distribution or printing.
+
+### B. ✅ Bulk Attendance & Conduct Marking
+- **Exam ID Bulk Load**: Entering an `Exam ID` loads all allocated students into an interactive checkbox table.
+- **One-Click Actions**:
+  - **✅ Mark All Present**: Sets all student checkboxes to Present with one click.
+  - **❌ Mark All Absent**: Sets all student checkboxes to Absent with one click.
+  - **💾 Save Attendance for All**: Persists attendance for all loaded students into `exam_attendance` in a single click.
+- **High-Contrast Dark Theme Readability**: Explicit row renderers ensure high-contrast text visibility:
+  - *Not Marked*: White text on dark slate surface (`#1E293B`).
+  - *Present*: Mint green text (`#A7F3D0`) on dark emerald background (`#064E3B`).
+  - *Absent*: Light red text (`#FECACA`) on dark rose background (`#450A0A`).
+
+### C. 📋 Visual Faculty Workload & Status Management
+- **Visual Progress Bar Renderer**: Renders color-coded workload progress bars for each faculty row:
+  - 🟢 `0 / 2 (Light Workload)`
+  - 🟡 `1 / 2 (Moderate Workload)`
+  - 🔴 `2 / 2 (Max Cap)`
+- **Live KPI Header**: Displays real-time counts for Total Faculty, Light Workload (0), Moderate (1), and Max Cap (2+).
+- **⚡ Update Availability**: One-click update button to change availability status (`AVAILABLE` / `UNAVAILABLE`) by Faculty ID or table row selection.
+
+### D. 🤖 Examination Assistant AI Copilot
+- **OpenRouter Free API**: Built using standard Java `HttpClient` connecting to free AI models (Meta Llama 3.3 70B, DeepSeek R1, Nemotron).
+- **Context-Aware Assistance**: Pre-configured quick action chips for drafting malpractice reports, invigilator policy guidance, washroom rules, and hall ticket checks.
+
+---
+
+## 4) Running the Application
+
+### Option 1: Run Pre-Built Executable Standalone Fat JAR (Recommended)
+
+Run directly from terminal or double-click `dist/ExaminationManagementSystem.jar`:
+
+```powershell
+java -jar dist/ExaminationManagementSystem.jar
+```
+
+*(The JAR contains all class files, properties, and the bundled MySQL driver, requiring zero external classpath configuration).*
+
+---
+
+### Option 2: Recompile & Package from Source
+
+```powershell
+# 1. Compile Java sources
+Get-ChildItem -Recurse -Filter *.java src | Resolve-Path -Relative | Set-Content sources.txt
+cmd /c 'javac -d bin -cp "lib/*" @sources.txt'
+
+# 2. Package Fat JAR with MySQL Driver
+if (Test-Path build_fat) { Remove-Item -Recurse -Force build_fat }
+New-Item -ItemType Directory -Path build_fat | Out-Null
+Set-Location build_fat
+& 'C:\Program Files\Java\jdk-23\bin\jar.exe' xf '../lib/mysql-connector-j-9.7.0.jar'
+Set-Location '..'
+Copy-Item -Recurse -Force bin\* build_fat\
+Copy-Item -Recurse -Force resources\* build_fat\
+& 'C:\Program Files\Java\jdk-23\bin\jar.exe' --create --file dist/ExaminationManagementSystem.jar --main-class com.ems.App -C build_fat .
+
+# 3. Launch application
+java -jar dist/ExaminationManagementSystem.jar
+```
+
+---
+
+## 5) Default Credentials
+
+| Role | Username / USN | Password | Description |
+| :--- | :--- | :--- | :--- |
+| **Admin** | `admin` | `admin123` | Full access to all modules and Examination Assistant AI |
+| **Exam Cell** | `examcell` | `exam123` | Seating allocation, faculty duty assignment & attendance |
+| **Viewer** | `viewer` | `view123` | Read-only view |
+| **Faculty** | `f101` | `faculty123` | Faculty duty roster & attendance |
+| **Student** | `1CS23CS001` | `1CS23CS001` | Student Portal, Seat Details & Printable Hall Ticket |
+
+---
+
+## 6) Step-by-Step Instructor Demo Script
+
+1. **Launch Application**: Execute `java -jar dist/ExaminationManagementSystem.jar`. Notice the animated splash screen and smooth login frame.
+2. **Login as Admin**: Enter `admin` / `admin123`. The Dashboard opens in full-screen window mode.
+3. **Faculty Duty Allocation**:
+   - Navigate to **👤 Faculty assignment**.
+   - Enter `Exam ID` `5001`. Click **⚡ Auto Assign Faculty**. Notice all rooms allotted to that exam are assigned invigilators automatically.
+   - Click **📥 Download Assignments CSV** to save the schedule.
+4. **Faculty Management & Visual Workload**:
+   - Navigate to **📋 Faculty management**.
+   - Observe the top KPI summary cards showing Light, Moderate, and Max Cap faculty workload.
+   - Look at the **Workload Visual** column showing progress bars (`0/2`, `1/2`, `2/2`).
+   - Select a faculty row (e.g. `106 - Prof. Amit Kulkarni`), change Availability dropdown to `AVAILABLE`/`UNAVAILABLE`, and click **⚡ Update Availability**.
+5. **Bulk Attendance Marking**:
+   - Navigate to **✅ Attendance & conduct**.
+   - Enter Exam ID `5001` and click **📋 Load Students**.
+   - Click **✅ Mark All Present** or **❌ Mark All Absent**, toggle individual checkboxes, then click **💾 Save Attendance for All**.
+6. **Examination Assistant AI Copilot**:
+   - Navigate to **🤖 Examination Assistant**.
+   - Click any quick action chip (e.g., *"Draft Malpractice Report"*) to ask the AI assistant for instant guidance.
